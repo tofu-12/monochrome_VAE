@@ -1,0 +1,9 @@
+[project]
+name = "monochrome-pic-autoencoder"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12.7"
+dependencies = [
+    "torch>=2.7.0",
+]
