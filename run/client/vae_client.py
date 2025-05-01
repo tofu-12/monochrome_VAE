@@ -4,6 +4,7 @@ from typing import Callable
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 
@@ -133,10 +134,27 @@ class VAEClient(RunClient):
         """
         モデルの設定
         """
+        # デバイスの設定
         self.device = self._get_device()
+
+        # モデルの設定
         self.model = VAE().to(self.device)
 
-    def run_training(self, batch_size: int, epoch: int, get_data_func: Callable, weights_file_path: str, model_file_path: str, is_loading_weights: bool):
+        # オプティマイザと損失関数の設定
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        self.loss_fn = reconstruction_divergence_nexus_loss
+    
+    def set_data(self, batch_size: int, get_data_func: Callable):
+        """
+        データの設定
+
+        Args:
+            batch_size: バッチサイズ
+            get_data_func: データ取得関数
+        """
+        self.datasets, self.dataloaders = get_data_func(batch_size)
+
+    def run_training(self, batch_size: int, epoch: int, get_data_func: Callable, weights_file_path: str, model_file_path: str, loading_weights: bool):
         """
         モデルの学習の実行
 
@@ -152,15 +170,15 @@ class VAEClient(RunClient):
             # モデルの設定
             self.set_model()
 
-            # データの取得
-            self.datasets, self.dataloaders = get_data_func(batch_size)
+            # データの設定
+            self.set_data(batch_size, get_data_func)
 
             # オプティマイザと損失関数の設定
             self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
             self.loss_fn = reconstruction_divergence_nexus_loss
 
             # 重みのロード
-            if is_loading_weights:
+            if loading_weights:
                 self._load_params(weights_file_path)
 
             # モデルの学習
@@ -168,6 +186,80 @@ class VAEClient(RunClient):
         
         except Exception as e:
             print(f"学習の実行の際にエラーが発生しました:\n {str(e)}")
+    
+    def run_test(self, batch_size: int, get_data_func: Callable, model_file_path: str, checking_test_loss: bool):
+        """
+        テストの実行
+
+        Args:
+            batch_size: バッチサイズ
+            get_data_func: データ取得関数
+            model_file_path: モデルファイルのパス
+            checking_test_loss: テストデータの損失を確認するか否か
+        """
+        # モデルの設定
+        self.set_model()
+        self._load_model(model_file_path)
+
+        # データの設定
+        self.set_data(batch_size, get_data_func)
+
+        # モデルのモード変更
+        self.model.eval()
+
+        # テストデータの損失の確認
+        if checking_test_loss:
+            total_test_loss_sum = 0
+
+            with torch.no_grad():
+                for X, y in self.dataloaders.test:
+                    X = X.to(self.device)
+
+                    pred, z, z_mean, z_log_var = self.model(X)
+                    batch_loss = self.loss_fn(pred, X, z_mean, z_log_var).item()
+                    total_test_loss_sum += batch_loss
+
+                total_samples = len(self.dataloaders.test.dataset)
+                average_val_loss = total_test_loss_sum / total_samples if total_samples > 0 else 0
+                print(average_val_loss)
+        
+        # 再構成の可視化
+        with torch.no_grad():
+            data_iter = iter(self.dataloaders.test)
+            X, _ = next(data_iter)
+            X = X.to(self.device)
+
+            pred, _, _, _ = self.model(X)
+
+            X_cpu = X.cpu().permute(0, 2, 3, 1).numpy()
+            pred_cpu = pred.cpu().permute(0, 2, 3, 1).numpy()
+
+            num_samples_to_show = min(X_cpu.shape[0], 5)
+
+            plt.figure(figsize=(10, 4))
+            for i in range(num_samples_to_show):
+                # 元画像
+                ax = plt.subplot(2, num_samples_to_show, i + 1)
+                
+                plt.imshow(X_cpu[i].squeeze(), cmap='gray')
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
+                if i == 0:
+                    ax.set_title('Original')
+
+                # 再構成画像
+                ax = plt.subplot(2, num_samples_to_show, i + 1 + num_samples_to_show)
+                
+                plt.imshow(pred_cpu[i].squeeze(), cmap='gray')
+                ax.get_xaxis().set_visible(False)
+                ax.get_yaxis().set_visible(False)
+                if i == 0:
+                    ax.set_title('Reconstruction')
+
+            plt.suptitle('Original vs Reconstruction')
+            plt.show()
+
+        print("Test run complete.")
 
 
 if __name__ == "__main__":
@@ -175,8 +267,10 @@ if __name__ == "__main__":
     weights_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "weights_file", "pic_512.weights.pth")
     model_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "model_file", "pic_512.weights.pth")
 
-    client = VAEClient()
-    client.set_model()
-    client.check_model_size(False)
+    is_train = True
 
-    client.run_training(150, 5, get_pic512_data, weights_file_path, model_file_path, False)
+    client = VAEClient()
+    if is_train:
+        client.run_training(300, 20, get_pic512_data, weights_file_path, model_file_path, False)
+    else:
+        client.run_test(300, get_pic512_data, model_file_path, False)

@@ -127,7 +127,7 @@ class RunClient:
         except Exception as e:
             raise Exception(f"モデルのロードに失敗しました: {str(e)}")
     
-    def check_model_size(self, is_checking_model_structure: bool):
+    def check_model_size(self, checking_model_structure: bool):
         """
         モデルのサイズを確認
 
@@ -144,7 +144,7 @@ class RunClient:
             print(f"学習対象のパラメータ数: {trainable_params}")
 
             # モデルの構造
-            if is_checking_model_structure:
+            if checking_model_structure:
                 for name, parameter in self.model.named_parameters():
                     print(f"Layer: {name} | Size: {parameter.size()} | Numel: {parameter.numel()} | Requires_grad: {parameter.requires_grad}")
 
@@ -154,7 +154,13 @@ class RunClient:
     def set_model(self):
         raise NotImplementedError
     
+    def set_data(self):
+        raise NotImplementedError
+    
     def run_training(self):
+        raise NotImplementedError
+    
+    def run_test(self):
         raise NotImplementedError
 
     def visualize_history(self):
