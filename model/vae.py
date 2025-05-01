@@ -105,10 +105,10 @@ class VAEEncoder(nn.Module):
         また、再パラメータ化トリックを用いて潜在変数zをサンプリングする。
         """
         super(VAEEncoder, self).__init__()
-        self.conv_block_1 = ConvBlock(in_channels=1, out_channels=32, kernel_size=3, stride=2, padding=1)
-        self.conv_block_2 = ConvBlock(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1)
-        self.conv_block_3 = ConvBlock(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1)
-        self.conv_block_4 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_1 = ConvBlock(in_channels=1, out_channels=16, kernel_size=3, stride=2, padding=1)
+        self.conv_block_2 = ConvBlock(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1)
+        self.conv_block_3 = ConvBlock(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1)
+        self.conv_block_4 = ConvBlock(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_5 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_6 = ConvBlock(in_channels=128, out_channels=64, kernel_size=3, stride=2, padding=1)
         self.conv_block_7 = ConvBlock(in_channels=64, out_channels=32, kernel_size=3, stride=2, padding=1)
@@ -160,10 +160,10 @@ class VAEDecoder(nn.Module):
         self.decoder_conv_block_2 = DecoderConvBlock(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_3 = DecoderConvBlock(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_4 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_5 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_6 = DecoderConvBlock(in_channels=128, out_channels=64, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.decoder_conv_block_7 = DecoderConvBlock(in_channels=64, out_channels=32, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.final_conv_t = nn.ConvTranspose2d(in_channels=32, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_5 = DecoderConvBlock(in_channels=128, out_channels=64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_6 = DecoderConvBlock(in_channels=64, out_channels=32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_7 = DecoderConvBlock(in_channels=32, out_channels=16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.final_conv_t = nn.ConvTranspose2d(in_channels=16, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """

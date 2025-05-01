@@ -271,6 +271,6 @@ if __name__ == "__main__":
 
     client = VAEClient()
     if is_train:
-        client.run_training(300, 20, get_pic512_data, weights_file_path, model_file_path, False)
+        client.run_training(200, 20, get_pic512_data, weights_file_path, model_file_path, False)
     else:
-        client.run_test(300, get_pic512_data, model_file_path, False)
+        client.run_test(200, get_pic512_data, model_file_path, False)
