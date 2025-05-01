@@ -1,0 +1,53 @@
+from pydantic import BaseModel, ConfigDict
+import torch
+
+
+# データ関連
+class Dataloaders(BaseModel):
+    """
+    データローダをまとめるデータ型
+
+    Args:
+        train: 訓練用データローダ
+        val: 検証用データローダ
+        test: テスト用データローダ
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    train: torch.utils.data.DataLoader
+    val: torch.utils.data.DataLoader
+    test: torch.utils.data.DataLoader
+
+class Datasets(BaseModel):
+    """
+    データセットをまとめるデータ型
+
+    Args:
+        train: 訓練用データセット
+        val: 検証用データセット
+        test: テスト用データセット
+    """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    train: torch.utils.data.Dataset
+    val: torch.utils.data.Dataset
+    test: torch.utils.data.Dataset
+
+
+# history関連
+class VAEHistory(BaseModel):
+    """
+    VAEの記録用history
+
+    Args:
+        train_loss_per_batch: バッチごとの訓練の損失
+        train_loss_per_epoch: エポックごとの訓練の損失
+        val_loss_per_epoch: 検証の損失
+        test_loss: テストの損失
+        val_z_per_epoch: 検証データの潜在空間上の座標
+    """
+    train_loss_per_batch: list = []
+    train_loss_per_epoch: list = []
+    val_loss_per_epoch: list = []
+    test_loss: list = []
+    val_z_per_epoch: list = []

@@ -34,5 +34,9 @@ cover/
 # Pytorchのデータセット
 data/
 
+# 学習ずみパラメータ
+model/model_file/
+model/weights_file/
+
 # .gitignoreを追跡
 !.gitignore

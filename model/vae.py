@@ -105,10 +105,14 @@ class VAEEncoder(nn.Module):
         また、再パラメータ化トリックを用いて潜在変数zをサンプリングする。
         """
         super(VAEEncoder, self).__init__()
-        self.conv_block_1 = ConvBlock(in_channels=3, out_channels=128, kernel_size=3, stride=2, padding=1)
-        self.conv_block_2 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_1 = ConvBlock(in_channels=1, out_channels=64, kernel_size=3, stride=2, padding=1)
+        self.conv_block_2 = ConvBlock(in_channels=64, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_3 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_4 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_5 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_6 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_7 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
+        self.conv_block_8 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.fc_z_mean = nn.Linear(512, 200)
         self.fc_z_log_var = nn.Linear(512, 200)
         self.reparameterize = Reparameterize()
@@ -130,6 +134,10 @@ class VAEEncoder(nn.Module):
         x = self.conv_block_2(x)
         x = self.conv_block_3(x)
         x = self.conv_block_4(x)
+        x = self.conv_block_5(x)
+        x = self.conv_block_6(x)
+        x = self.conv_block_7(x)
+        x = self.conv_block_8(x)
         x = x.view(-1, 128 * 2 * 2)
         z_mean = self.fc_z_mean(x)
         z_log_var = self.fc_z_log_var(x)
@@ -151,7 +159,11 @@ class VAEDecoder(nn.Module):
         self.decoder_conv_block_1 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_2 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_3 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
-        self.final_conv_t = nn.ConvTranspose2d(in_channels=128, out_channels=3, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_4 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_5 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_6 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.decoder_conv_block_7 = DecoderConvBlock(in_channels=128, out_channels=64, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.final_conv_t = nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=3, stride=2, padding=1, output_padding=1)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """
@@ -169,6 +181,10 @@ class VAEDecoder(nn.Module):
         x = self.decoder_conv_block_1(x)
         x = self.decoder_conv_block_2(x)
         x = self.decoder_conv_block_3(x)
+        x = self.decoder_conv_block_4(x)
+        x = self.decoder_conv_block_5(x)
+        x = self.decoder_conv_block_6(x)
+        x = self.decoder_conv_block_7(x)
         x = self.final_conv_t(x)
         x = F.sigmoid(x)
 
@@ -206,7 +222,7 @@ class VAE(nn.Module):
         return output ,z, z_mean, z_log_var
 
 
-def loss_function(predict, target, z_mean, z_log_var):
+def reconstruction_divergence_nexus_loss(predict, target, z_mean, z_log_var):
     """
     VAEの損失関数
     再構成誤差とKL情報量の和
