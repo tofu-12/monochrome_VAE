@@ -1,25 +1,30 @@
 import os
 import sys
-from typing import Callable
+from typing import Callable, Optional
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
 import torch.optim as optim
 
-from model.vae import VAE, reconstruction_divergence_nexus_loss
-from run.base_client import RunClient
-from run.dataset.pic_512_dataset import get_pic512_data
-from run.schemas import VAEHistory
+from model.VAE.vae_512_to_8 import VAE, reconstruction_divergence_nexus_loss
+from run_client.base_client import RunClient
+from run_client.dataset.pic_512_dataset import get_pic512_data
+from run_client.schemas import VAEHistory
 
 
 class VAEClient(RunClient):
-    def __init__(self):
+    def __init__(self, model_module: nn.Module):
         """
         VAEを実行するクライエントのインスタンスの初期化
+
+        Args:
+            model_module: VAEのモデル
         """
         super().__init__()
+        self.model_module = model_module
     
     def _training(self, batch_size: int, epoch: int, weights_file_path: str, model_file_path: str):
         """
@@ -138,7 +143,7 @@ class VAEClient(RunClient):
         self.device = self._get_device()
 
         # モデルの設定
-        self.model = VAE().to(self.device)
+        self.model = self.model_module().to(self.device)
 
         # オプティマイザと損失関数の設定
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -187,7 +192,7 @@ class VAEClient(RunClient):
         except Exception as e:
             print(f"学習の実行の際にエラーが発生しました:\n {str(e)}")
     
-    def run_test(self, batch_size: int, get_data_func: Callable, model_file_path: str, checking_test_loss: bool):
+    def run_test(self, batch_size: int, get_data_func: Callable, model_file_path: str, checking_test_loss: bool, reconstruction_threshold: Optional[float] = None):
         """
         テストの実行
 
@@ -196,6 +201,7 @@ class VAEClient(RunClient):
             get_data_func: データ取得関数
             model_file_path: モデルファイルのパス
             checking_test_loss: テストデータの損失を確認するか否か
+            reconstruction_threshold: 再構成画像を二値化する際の閾値 (0.0から1.0の範囲を想定)
         """
         # モデルの設定
         self.set_model()
@@ -215,24 +221,31 @@ class VAEClient(RunClient):
                 for X, y in self.dataloaders.test:
                     X = X.to(self.device)
 
+                    # VAEの出力に合わせてpred, z, z_mean, z_log_varを取得
                     pred, z, z_mean, z_log_var = self.model(X)
+                    # 損失関数もVAE用に調整されていると仮定
                     batch_loss = self.loss_fn(pred, X, z_mean, z_log_var).item()
                     total_test_loss_sum += batch_loss
 
                 total_samples = len(self.dataloaders.test.dataset)
                 average_val_loss = total_test_loss_sum / total_samples if total_samples > 0 else 0
-                print(average_val_loss)
-        
+                print(f"Average Test Loss: {average_val_loss}")
+
         # 再構成の可視化
         with torch.no_grad():
             data_iter = iter(self.dataloaders.test)
             X, _ = next(data_iter)
             X = X.to(self.device)
 
+            # VAEの出力に合わせてpredを取得
             pred, _, _, _ = self.model(X)
 
             X_cpu = X.cpu().permute(0, 2, 3, 1).numpy()
             pred_cpu = pred.cpu().permute(0, 2, 3, 1).numpy()
+
+            # 二値化処理
+            if reconstruction_threshold:
+                pred_cpu= (pred_cpu >= reconstruction_threshold).astype(float)
 
             num_samples_to_show = min(X_cpu.shape[0], 5)
 
@@ -240,23 +253,25 @@ class VAEClient(RunClient):
             for i in range(num_samples_to_show):
                 # 元画像
                 ax = plt.subplot(2, num_samples_to_show, i + 1)
-                
+
+                # 元画像はそのまま表示
                 plt.imshow(X_cpu[i].squeeze(), cmap='gray')
                 ax.get_xaxis().set_visible(False)
                 ax.get_yaxis().set_visible(False)
                 if i == 0:
                     ax.set_title('Original')
 
-                # 再構成画像
+                # 再構成画像 (二値化後)
                 ax = plt.subplot(2, num_samples_to_show, i + 1 + num_samples_to_show)
-                
+
+                # ★ 二値化したデータを使用 ★
                 plt.imshow(pred_cpu[i].squeeze(), cmap='gray')
                 ax.get_xaxis().set_visible(False)
                 ax.get_yaxis().set_visible(False)
                 if i == 0:
-                    ax.set_title('Reconstruction')
+                    ax.set_title('Reconstruction (Binarized)') # タイトルも変更して分かりやすく
 
-            plt.suptitle('Original vs Reconstruction')
+            plt.suptitle(f'Original vs Reconstruction (Threshold: {reconstruction_threshold})') # タイトルに閾値を追加
             plt.show()
 
         print("Test run complete.")
@@ -264,13 +279,13 @@ class VAEClient(RunClient):
 
 if __name__ == "__main__":
     # 保存先のパス
-    weights_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "weights_file", "pic_512.weights.pth")
-    model_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "model_file", "pic_512.weights.pth")
+    weights_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "weights_file", "pic_512_to_8_weights.pth")
+    model_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "model_file", "pic_512_to_8_model.pth")
 
     is_train = True
 
-    client = VAEClient()
+    client = VAEClient(VAE)
     if is_train:
-        client.run_training(200, 20, get_pic512_data, weights_file_path, model_file_path, False)
+        client.run_training(250, 20, get_pic512_data, weights_file_path, model_file_path, False)
     else:
-        client.run_test(200, get_pic512_data, model_file_path, False)
+        client.run_test(250, get_pic512_data, model_file_path, False)
