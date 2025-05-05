@@ -2,9 +2,9 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 
-from run_client.client.vae_client import VAEClient
-from model.VAE.vae_512_to_200 import VAE
-from run_client.dataset.pic_512_dataset import get_pic512_data
+from VAE_client.vae_run_client import VAEClient
+from VAE_model.VAE.vae_512_to_200 import VAE
+from VAE_client.dataset.pic_512_dataset import get_pic512_data
 
 
 if __name__ == "__main__":

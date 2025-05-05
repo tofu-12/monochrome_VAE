@@ -186,18 +186,17 @@ class VAEDecoder(nn.Module):
         x = self.decoder_conv_block_6(x)
         x = self.decoder_conv_block_7(x)
         x = self.final_conv_t(x)
-        x = F.sigmoid(x)
 
         return x
 
-class VAE(nn.Module):
+class VAE_512to200(nn.Module):
     def __init__(self):
         """
         VAEクラスのインスタンスの初期化
         Variational Autoencoder (VAE) モデル全体を構成する。
         エンコーダーとデコーダーを内部に持つ。
         """
-        super(VAE, self).__init__()
+        super(VAE_512to200, self).__init__()
         self.encoder = VAEEncoder()
         self.decoder = VAEDecoder()
 
@@ -220,23 +219,3 @@ class VAE(nn.Module):
         output = self.decoder(z)
         
         return output ,z, z_mean, z_log_var
-
-
-def reconstruction_divergence_nexus_loss(predict, target, z_mean, z_log_var):
-    """
-    VAEの損失関数
-    再構成誤差とKL情報量の和
-
-    Args:
-        predict: 予測値
-        target: 真値
-        z_mean: 潜在空間の平均値
-        z_log_var: 潜在空間の対数分散
-    
-    Returns:
-        損失
-    """
-    bce_loss = F.binary_cross_entropy(predict, target, reduction='sum')
-    kl_loss = -0.5 * torch.sum(1 + z_log_var - z_mean ** 2 - z_log_var.exp())
-    loss = bce_loss + kl_loss
-    return loss
