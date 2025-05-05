@@ -104,7 +104,7 @@ class RunClient:
                 print("-" * 50)
         
         except Exception as e:
-            raise Exception(f"パラメータのロードに失敗しました: {str(e)}")
+            print(f"パラメータのロードに失敗しました: {str(e)}")
         
     def _load_model(self, model_file_path: str) -> None:
         """
