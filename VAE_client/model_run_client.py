@@ -10,6 +10,7 @@ from .schemas import Dataloaders, Datasets
 
 
 class ModelRunClient:
+    # 初期化関連
     def __init__(self):
         """
         モデルを実行するクライエントのインスタンスの初期化
@@ -73,7 +74,7 @@ class ModelRunClient:
             Exception: 任意のエラー
         """
         try:
-            self.loss_fn = loss_function
+            self.loss_function = loss_function
             self.optimizer = optimizer
         
         except Exception as e:
@@ -96,9 +97,8 @@ class ModelRunClient:
         except Exception as e:
             raise Exception(f"データの設定に失敗しました:\n{str(e)}")
     
-    def set_data(self):
-        raise NotImplementedError
-    
+
+    # 訓練関連
     def _training(self):
         raise NotImplementedError
 
@@ -108,6 +108,8 @@ class ModelRunClient:
     def _val_loop(self):
         raise NotImplementedError
     
+
+    # ファイル関連
     def _save_weights(self, weights_file_name: str) -> None:
         """
         モデルのパラメータを保存する
@@ -188,10 +190,15 @@ class ModelRunClient:
                 self.model.load_state_dict(torch.load(weights_file_path))
                 print("Done!")
                 print("-" * 50)
+            
+            else:
+                raise Exception(f"パラメータファイル ({weights_file_path}) が存在しません")
         
         except Exception as e:
+            print("-" * 50)
             print(f"パラメータのロードに失敗しました: {str(e)}")
             print("パラメータをロードしていないモデルを使用します")
+            print("-" * 50)
         
     def _load_model(self, model_file_name: str) -> None:
         """
@@ -216,6 +223,16 @@ class ModelRunClient:
         except Exception as e:
             raise Exception(f"モデルのロードに失敗しました: {str(e)}")
     
+
+    # 実行関連
+    def run_training(self):
+        raise NotImplementedError
+    
+    def run_test(self):
+        raise NotImplementedError
+    
+
+    # 可視化関連
     def visualize_model_size(self, checking_model_structure: bool=False) -> None:
         """
         モデルのサイズを確認
@@ -243,19 +260,10 @@ class ModelRunClient:
         
         except Exception as e:
             print(f"モデルのサイズを確認に失敗しました: {str(e)}")
-    
-    def run_training(self):
-        raise NotImplementedError
-    
-    def run_test(self):
-        raise NotImplementedError
 
     def visualize_loss_history(self) -> None:
         """
         学習履歴の可視化
-
-        Raise:
-            Exception: 任意のエラーが発生した場合
         """
         try:
             if not hasattr(self, 'history') or self.history is None:
@@ -312,4 +320,4 @@ class ModelRunClient:
             plt.show()
         
         except Exception as e:
-            raise Exception(f"学習履歴の可視化に失敗しました: {str(e)}")
+            print(f"学習履歴の可視化に失敗しました: {str(e)}")

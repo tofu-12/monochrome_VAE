@@ -19,11 +19,13 @@ def select_run_mode() -> str:
     try:
         mode_dict = {"1": "train_with_weights_file", "2": "train_without_weights_file", "3": "test", "4": "test_only_pic"}
 
-        print("1: train_with_weights_file")
-        print("2: train_without_weights_file")
+        print("-" * 50)
+        print("1: train with weights file")
+        print("2: train without weights file")
         print("3: test")
         print("4: test only pic")
         mode_num = input("モードを選択してください >> ")
+        print("-" * 50)
         mode = mode_dict[mode_num]
 
         return mode
@@ -81,4 +83,3 @@ def vae_run_with_selected_mode(
     
     elif mode == "test_only_pic":
         client.run_test(model_file_name, checking_test_loss=False)
-
