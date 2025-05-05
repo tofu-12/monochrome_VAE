@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from model.VAE.vae_512_to_8 import VAE, reconstruction_divergence_nexus_loss
+from model.VAE.vae_512_to_8 import VAE, reconstruction_bce_loss_function
 from run_client.base_client import RunClient
 from run_client.dataset.pic_512_dataset import get_pic512_data
 from run_client.schemas import VAEHistory
@@ -135,9 +135,12 @@ class VAEClient(RunClient):
         self.history.val_loss_per_epoch.append(average_val_loss)
         self.history.val_z_per_epoch.append(val_z_concatenated)
     
-    def set_model(self):
+    def set_model(self, loss_function: Callable):
         """
         モデルの設定
+
+        Args:
+            損失関数
         """
         # デバイスの設定
         self.device = self._get_device()
@@ -147,7 +150,7 @@ class VAEClient(RunClient):
 
         # オプティマイザと損失関数の設定
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.loss_fn = reconstruction_divergence_nexus_loss
+        self.loss_fn = loss_function
     
     def set_data(self, batch_size: int, get_data_func: Callable):
         """
@@ -159,7 +162,7 @@ class VAEClient(RunClient):
         """
         self.datasets, self.dataloaders = get_data_func(batch_size)
 
-    def run_training(self, batch_size: int, epoch: int, get_data_func: Callable, weights_file_path: str, model_file_path: str, loading_weights: bool):
+    def run_training(self, batch_size: int, epoch: int, get_data_func: Callable, loss_function: Callable, weights_file_path: str, model_file_path: str, loading_weights: bool):
         """
         モデルの学習の実行
 
@@ -167,20 +170,17 @@ class VAEClient(RunClient):
             batch_size: バッチサイズ
             epoch: エポック数
             get_data_func: データ取得関数
+            loss_function: 損失関数
             weights_file_path: モデルの重みを保存・読み込みするファイルのパス
             model_file_path: モデル全体を保存・読み込みするファイルのパス
             is_loading_weights: ファイルから読み込んで学習を再開するかどうかを示すフラグ
         """
         try:
             # モデルの設定
-            self.set_model()
+            self.set_model(loss_function)
 
             # データの設定
             self.set_data(batch_size, get_data_func)
-
-            # オプティマイザと損失関数の設定
-            self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-            self.loss_fn = reconstruction_divergence_nexus_loss
 
             # 重みのロード
             if loading_weights:
@@ -192,19 +192,20 @@ class VAEClient(RunClient):
         except Exception as e:
             print(f"学習の実行の際にエラーが発生しました:\n {str(e)}")
     
-    def run_test(self, batch_size: int, get_data_func: Callable, model_file_path: str, checking_test_loss: bool, reconstruction_threshold: Optional[float] = None):
+    def run_test(self, batch_size: int, get_data_func: Callable, loss_function: Callable, model_file_path: str, checking_test_loss: bool, reconstruction_threshold: Optional[float] = None):
         """
         テストの実行
 
         Args:
             batch_size: バッチサイズ
             get_data_func: データ取得関数
+            loss_function: 損失関数
             model_file_path: モデルファイルのパス
             checking_test_loss: テストデータの損失を確認するか否か
             reconstruction_threshold: 再構成画像を二値化する際の閾値 (0.0から1.0の範囲を想定)
         """
         # モデルの設定
-        self.set_model()
+        self.set_model(loss_function)
         self._load_model(model_file_path)
 
         # データの設定
@@ -282,10 +283,19 @@ if __name__ == "__main__":
     weights_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "weights_file", "pic_512_to_8_weights.pth")
     model_file_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "model", "model_file", "pic_512_to_8_model.pth")
 
-    is_train = True
+    # モードの設定
+    print("1: train")
+    print("2: test")
+    is_train = input("Select mode: ")
 
+    if is_train == "1":
+        is_train = True
+    else:
+        is_train = False
+
+    # モデルの使用
     client = VAEClient(VAE)
     if is_train:
-        client.run_training(250, 20, get_pic512_data, weights_file_path, model_file_path, False)
+        client.run_training(250, 20, get_pic512_data,reconstruction_bce_loss_function, weights_file_path, model_file_path, True)
     else:
-        client.run_test(250, get_pic512_data, model_file_path, False)
+        client.run_test(250, get_pic512_data, reconstruction_bce_loss_function, model_file_path, False)

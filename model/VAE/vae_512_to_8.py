@@ -222,7 +222,7 @@ class VAE(nn.Module):
         return output ,z, z_mean, z_log_var
 
 
-def reconstruction_divergence_nexus_loss(predict, target, z_mean, z_log_var):
+def reconstruction_bce_loss_function(predict, target, z_mean, z_log_var):
     """
     VAEの損失関数
     再構成誤差とKL情報量の和
@@ -239,4 +239,23 @@ def reconstruction_divergence_nexus_loss(predict, target, z_mean, z_log_var):
     bce_loss = F.binary_cross_entropy(predict, target, reduction='sum')
     kl_loss = -0.5 * torch.sum(1 + z_log_var - z_mean ** 2 - z_log_var.exp())
     loss = bce_loss + kl_loss
+    return loss
+
+def reconstruction_mse_loss_function(predict, target, z_mean, z_log_var):
+    """
+    VAEの損失関数
+    再構成誤差とKL情報量の和
+
+    Args:
+        predict: 予測値
+        target: 真値
+        z_mean: 潜在空間の平均値
+        z_log_var: 潜在空間の対数分散
+    
+    Returns:
+        損失
+    """
+    mse_loss = F.mse_loss(predict, target, reduction='sum')
+    kl_loss = -0.5 * torch.sum(1 + z_log_var - z_mean ** 2 - z_log_var.exp())
+    loss = mse_loss + kl_loss
     return loss
