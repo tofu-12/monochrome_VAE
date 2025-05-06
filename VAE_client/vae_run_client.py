@@ -120,7 +120,7 @@ class VAERunClient(ModelRunClient):
             all_z_batches = []
 
             with torch.no_grad():
-                with tqdm(total=sample_size, desc="Validating", leave=False) as pbar:
+                with tqdm(total=sample_size, desc="Validating") as pbar:
                     for X, _ in self.dataloaders.val:
                         # sample_sizeとの調整
                         current_batch_size = X.size(0)
