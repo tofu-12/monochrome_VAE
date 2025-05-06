@@ -86,8 +86,8 @@ def get_pic512_data(batch_size: int) -> tuple[Datasets, Dataloaders]:
     # データローダの作成
     try:
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle=True, num_workers=2)
-        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size, shuffle=False, num_workers=2)
-        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=False, num_workers=2)
+        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size, shuffle=True, num_workers=2)
+        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=True, num_workers=2)
         dataloaders = Dataloaders(train=train_dataloader, val=val_dataloader, test=test_dataloader)
 
         return datasets, dataloaders
