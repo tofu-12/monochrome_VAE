@@ -126,10 +126,7 @@ class VAERunClient(ModelRunClient):
                         current_batch_size = X.size(0)
                         samples_to_process_in_batch = min(current_batch_size, sample_size - processed_samples_num)
 
-                        if processed_samples_num >= sample_size:
-                            break
-
-                        X = X.to(self.device)
+                        X = X[:samples_to_process_in_batch].to(self.device)
 
                         pred, z, z_mean, z_log_var = self.model(X)
                         batch_loss = self.loss_function(pred, X, z_mean, z_log_var).item()
@@ -141,6 +138,9 @@ class VAERunClient(ModelRunClient):
                         processed_samples_num += samples_to_process_in_batch
                         pbar.update(samples_to_process_in_batch)
 
+                        if processed_samples_num >= sample_size:
+                            break
+
             average_val_loss = total_val_loss_sum / processed_samples_num if processed_samples_num > 0 else 0
 
             if all_z_batches:
@@ -148,7 +148,7 @@ class VAERunClient(ModelRunClient):
             else:
                 val_z_concatenated = np.array([])
 
-            print(f"Test Error: \n Avg loss: {average_val_loss:>8f} \n")
+            print(f"Validation loss: {average_val_loss:>8f} \n")
 
             self.history.val_loss_per_epoch.append(average_val_loss)
             self.history.val_z_per_epoch.append(val_z_concatenated)
@@ -214,7 +214,9 @@ class VAERunClient(ModelRunClient):
                 total_test_loss_sum = 0
 
                 with torch.no_grad():
-                    for X, _ in self.dataloaders.test:
+                    test_loop = tqdm(self.dataloaders.test, desc='Test')
+
+                    for X, _ in test_loop:
                         X = X.to(self.device)
 
                         pred, _, z_mean, z_log_var = self.model(X)
@@ -223,8 +225,8 @@ class VAERunClient(ModelRunClient):
                         total_test_loss_sum += batch_loss
 
                     total_samples = len(self.dataloaders.test.dataset)
-                    average_val_loss = total_test_loss_sum / total_samples if total_samples > 0 else 0
-                    print(f"Average Test Loss: {average_val_loss}")
+                    average_test_loss = total_test_loss_sum / total_samples if total_samples > 0 else 0
+                    print(f"Test Loss: {average_test_loss:>8f} ")
 
             # 再構成の可視化
             with torch.no_grad():

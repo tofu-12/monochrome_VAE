@@ -24,8 +24,8 @@ if __name__ == "__main__":
     loss_function = weight_bce_reconstruction_loss(weight=6000/256144)
     client.set_loss_function_and_optimizer(loss_function, optimizer)
 
-    batch_size = 64
-    epoch = 10
+    batch_size = 256
+    epoch = 2
     client.set_data(batch_size, get_pic512_data)
 
     # モードの選択と実行
