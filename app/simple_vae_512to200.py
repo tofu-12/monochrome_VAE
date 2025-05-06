@@ -21,11 +21,11 @@ if __name__ == "__main__":
     client.set_model(VAE_512to200)
 
     optimizer = optim.Adam(client.model.parameters(), lr=0.001)
-    loss_function = weight_bce_reconstruction_loss(weight=1/2e5)
+    loss_function = weight_bce_reconstruction_loss(weight=6000/256144)
     client.set_loss_function_and_optimizer(loss_function, optimizer)
 
     batch_size = 64
-    epoch = 5
+    epoch = 3
     client.set_data(batch_size, get_pic512_data)
 
     # モードの選択と実行
