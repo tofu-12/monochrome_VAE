@@ -31,6 +31,9 @@ cover/
 # 仮想環境
 .venv/
 
+# mac関連
+*.DS_Store
+
 # Pytorchのデータセット
 data/
 

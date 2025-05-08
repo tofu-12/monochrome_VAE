@@ -18,21 +18,6 @@ class Dataloaders(BaseModel):
     val: torch.utils.data.DataLoader
     test: torch.utils.data.DataLoader
 
-class Datasets(BaseModel):
-    """
-    データセットをまとめるデータ型
-
-    Args:
-        train: 訓練用データセット
-        val: 検証用データセット
-        test: テスト用データセット
-    """
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    
-    train: torch.utils.data.Dataset
-    val: torch.utils.data.Dataset
-    test: torch.utils.data.Dataset
-
 
 # history関連
 class VAEHistory(BaseModel):
