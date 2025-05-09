@@ -71,7 +71,7 @@ class FashionMnistDataset(Dataset):
 
             label = int(row.iloc[0])
 
-            image_pixels = row.iloc[1:].values.astype(np.float32)
+            image_pixels = row.iloc[1:].values.astype(np.uint8)
             image = image_pixels.reshape(28, 28)
 
             # 変換処理
@@ -125,3 +125,5 @@ def get_fashion_mnist_data(batch_size: int) -> Dataloaders:
 if __name__ == "__main__":
     data = get_fashion_mnist_data(batch_size=1)
     print(data.train.dataset[0])
+    print("max: ", str(data.train.dataset[0][0].max()))
+    print("min: ", str(data.train.dataset[0][0].min()))

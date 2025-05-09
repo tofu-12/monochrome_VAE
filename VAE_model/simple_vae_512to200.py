@@ -13,7 +13,7 @@ class VAEEncoder(nn.Module):
         入力画像を処理し、潜在空間の平均(z_mean)と対数分散(z_log_var)を出力する。
         また、再パラメータ化トリックを用いて潜在変数zをサンプリングする。
         """
-        super(VAEEncoder, self).__init__()
+        super().__init__()
         self.conv_block_1 = ConvBlock(in_channels=1, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_2 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_3 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
@@ -63,7 +63,7 @@ class VAEDecoder(nn.Module):
         潜在変数zを入力として受け取り、画像を再構成する。
         エンコーダーと逆の処理を行うように設計されている。
         """
-        super(VAEDecoder, self).__init__()
+        super().__init__()
         self.fc = nn.Linear(200, 128 * 2 * 2) 
         self.decoder_conv_block_1 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_2 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
@@ -105,7 +105,7 @@ class VAE_512to200(nn.Module):
         Variational Autoencoder (VAE) モデル全体を構成する。
         エンコーダーとデコーダーを内部に持つ。
         """
-        super(VAE_512to200, self).__init__()
+        super().__init__()
         self.encoder = VAEEncoder()
         self.decoder = VAEDecoder()
 
