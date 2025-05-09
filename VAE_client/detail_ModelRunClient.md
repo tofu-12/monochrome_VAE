@@ -84,6 +84,21 @@
 
 7. 学習履歴の可視化
     ```python
+    class History(BaseModel):
+        """
+        history（run_trainingの際にこれをインスタンスの変数に設定する）
+    
+        Args:
+            train_loss_per_batch: バッチごとの訓練の損失
+            train_loss_per_epoch: エポックごとの訓練の損失
+            val_loss_per_epoch: 検証の損失
+            test_loss: テストの損失
+        """
+        train_loss_per_batch: list = []
+        train_loss_per_epoch: list = []
+        val_loss_per_epoch: list = []
+        test_loss: list = []
+    
     client.visualize_loss_history()
     ```
 
