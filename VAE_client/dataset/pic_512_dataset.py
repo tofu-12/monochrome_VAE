@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 
 import pandas as pd
@@ -7,7 +8,8 @@ import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
-from ..schemas import Dataloaders, Datasets
+sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
+from schemas import Dataloaders
 
 
 class Pic512Dataset(Dataset):
@@ -41,7 +43,18 @@ class Pic512Dataset(Dataset):
     def __len__(self):
         return len(self.target_img_names)
     
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
+        """
+        指定されたインデックスのデータサンプルを取得する
+
+        Args:
+            idx: 取得するサンプルのインデックス
+
+        Returns:
+            tuple:
+                image: 画像データ
+                image: 画像データ
+        """
         try:
             img_path = os.path.join(self.img_dir, self.target_img_names[idx])
             image = Image.open(img_path).convert('L')
@@ -55,7 +68,7 @@ class Pic512Dataset(Dataset):
             raise Exception(f"アイテムの取得に失敗しました: {str(e)}")
 
 
-def get_pic512_data(batch_size: int) -> tuple[Datasets, Dataloaders]:
+def get_pic512_data(batch_size: int) -> Dataloaders:
     """
     データローダの作成
 
@@ -63,7 +76,7 @@ def get_pic512_data(batch_size: int) -> tuple[Datasets, Dataloaders]:
         batch_size: バッチサイズ
 
     Returns:
-        tuple: Datasets, Dataloaders
+        Dataloaders
     """
     # パスの設定
     img_dir_path = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "data", "pic_512", "image")
@@ -78,7 +91,6 @@ def get_pic512_data(batch_size: int) -> tuple[Datasets, Dataloaders]:
         train_dataset = Pic512Dataset(img_dir_path, partition_file_path, "train", transform)
         val_dataset = Pic512Dataset(img_dir_path, partition_file_path, "val", transform)
         test_dataset = Pic512Dataset(img_dir_path, partition_file_path, "test", transform)
-        datasets = Datasets(train=train_dataset, val=val_dataset, test=test_dataset)
     
     except Exception as e:
         raise Exception(f"データセットの作成に失敗しました: \n {str(e)}")
@@ -90,13 +102,12 @@ def get_pic512_data(batch_size: int) -> tuple[Datasets, Dataloaders]:
         test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=True, num_workers=2)
         dataloaders = Dataloaders(train=train_dataloader, val=val_dataloader, test=test_dataloader)
 
-        return datasets, dataloaders
+        return dataloaders
 
     except Exception as e:
         raise Exception(f"データローダの作成に失敗しました: \n {str(e)}")
     
             
-
 if __name__ == "__main__":
     # pathの設定
     partition_file = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "data", "pic_512", "partition_file.csv")

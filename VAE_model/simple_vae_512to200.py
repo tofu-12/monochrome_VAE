@@ -2,98 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-class ConvBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int | tuple, stride: int, padding: int):
-        """
-        畳み込みブロックのインスタンスの初期化
-        Conv -> BatchNorm -> Relu
-
-        Args:
-            in_channels: 入力チャネル数
-            out_channels: 出力チャネル数
-            kernel_size: カーネルサイズ
-            stride: ストライドの幅
-            padding: パディングサイズ
-        """
-        super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
-        self.bn = nn.BatchNorm2d(out_channels)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        順伝播の処理
-
-        Args:
-            x: 入力テンソル
-        
-        Returns:
-            torch.Tensor: 出力データ
-        """
-        x = self.conv(x)
-        x = self.bn(x)
-        x = F.relu(x)
-        return x
-
-
-class DecoderConvBlock(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int | tuple, stride: int, padding: int, output_padding: int):
-        """
-        デコーダー用の転置畳み込みブロックのインスタンスの初期化
-        ConvTranspose -> BatchNorm -> Relu
-
-        Args:
-            in_channels: 入力チャネル数
-            out_channels: 出力チャネル数
-            kernel_size: カーネルサイズ
-            stride: ストライドの幅
-            padding: パディングサイズ
-            output_padding: 出力の追加パディングサイズ
-        """
-        super(DecoderConvBlock, self).__init__()
-        self.conv_t = nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, output_padding)
-        self.bn = nn.BatchNorm2d(out_channels)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        順伝播の処理
-        入力テンソルxに対して、ConvTranspose -> BatchNorm -> Reluの順で適用
-
-        Args:
-            x: 入力テンソル
-
-        Returns:
-            torch.Tensor: 処理後の出力テンソル
-        """
-        x = self.conv_t(x)
-        x = self.bn(x)
-        x = F.relu(x)
-        return x
-
-
-class Reparameterize(nn.Module):
-    def __init__(self):
-        """
-        再パラメータ化トリックを実装するクラスのインスタンスの初期化
-        """
-        super(Reparameterize, self).__init__()
-
-    def forward(self, z_mean: torch.Tensor, z_log_var: torch.Tensor) -> torch.Tensor:
-        """
-        再パラメータ化トリックにより、潜在変数zをサンプリング
-
-        Args:
-            z_mean: 潜在空間の平均を表すテンソル
-            z_log_var: 潜在空間の対数分散を表すテンソル
-
-        Returns:
-            torch.Tensor: サンプリングされた潜在変数zのテンソル
-        """
-        std_dev = torch.exp(0.5 * z_log_var)
-        epsilon = torch.randn_like(z_mean)
-        z = z_mean + std_dev * epsilon
-        
-        return z    
+from .blocks import ConvBlock, DecoderConvBlock, Reparameterize
 
 
 class VAEEncoder(nn.Module):
@@ -104,7 +13,7 @@ class VAEEncoder(nn.Module):
         入力画像を処理し、潜在空間の平均(z_mean)と対数分散(z_log_var)を出力する。
         また、再パラメータ化トリックを用いて潜在変数zをサンプリングする。
         """
-        super(VAEEncoder, self).__init__()
+        super().__init__()
         self.conv_block_1 = ConvBlock(in_channels=1, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_2 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
         self.conv_block_3 = ConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1)
@@ -154,7 +63,7 @@ class VAEDecoder(nn.Module):
         潜在変数zを入力として受け取り、画像を再構成する。
         エンコーダーと逆の処理を行うように設計されている。
         """
-        super(VAEDecoder, self).__init__()
+        super().__init__()
         self.fc = nn.Linear(200, 128 * 2 * 2) 
         self.decoder_conv_block_1 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
         self.decoder_conv_block_2 = DecoderConvBlock(in_channels=128, out_channels=128, kernel_size=3, stride=2, padding=1, output_padding=1)
@@ -196,7 +105,7 @@ class VAE_512to200(nn.Module):
         Variational Autoencoder (VAE) モデル全体を構成する。
         エンコーダーとデコーダーを内部に持つ。
         """
-        super(VAE_512to200, self).__init__()
+        super().__init__()
         self.encoder = VAEEncoder()
         self.decoder = VAEDecoder()
 

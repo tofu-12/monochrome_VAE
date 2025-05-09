@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from .schemas import Dataloaders, Datasets
+from .schemas import Dataloaders
 
 
 class ModelRunClient:
@@ -17,7 +17,6 @@ class ModelRunClient:
         """
         self.device: torch.device = None
 
-        self.datasets: Datasets = None
         self.dataloaders: Dataloaders = None
 
         self.model: nn.Module = None
@@ -92,7 +91,7 @@ class ModelRunClient:
             Exception: 任意のエラー
         """
         try:
-            self.datasets, self.dataloaders = get_data_function(batch_size)
+            self.dataloaders = get_data_function(batch_size)
         
         except Exception as e:
             raise Exception(f"データの設定に失敗しました:\n{str(e)}")
